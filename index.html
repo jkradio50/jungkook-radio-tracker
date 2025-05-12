@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jung Kook Radio Tracker</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #333;
+    }
+    th {
+      background-color: #1c2a3a;
+      color: white;
+      font-size: 1.1em;
+    }
+    td a {
+      color: #4ea3f1;
+      text-decoration: none;
+    }
+    td a:hover {
+      text-decoration: underline;
+    }
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎻 Jung Kook Radio Tracker</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>🎵 Song</th>
+        <th>📡 Station</th>
+        <th>⌜ RadioBox</th>
+        <th><img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" class="icon" alt="Twitter" /></th>
+        <th><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" class="icon" alt="Facebook" /></th>
+      </tr>
+    </thead>
+    <tbody id="stations-table-body">
+      <!-- Populated by JS -->
+    </tbody>
+  </table>
+
+  <script>
+    fetch('http://127.0.0.1:8000/stations')
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.getElementById('stations-table-body');
+        tbody.innerHTML = '';
+
+        data.forEach(item => {
+          const hasWebsite = item.website && item.website !== "n/a" && item.website !== "Not listed";
+          const hasTwitter = item.twitter && item.twitter !== "n/a" && !item.twitter.includes("onlineradiobox");
+          const hasFacebook = item.facebook && item.facebook !== "n/a" && item.facebook !== "Not listed";
+
+          const stationLink = hasWebsite ? item.website : item.station_url;
+          const stationCell = `<a href="${stationLink}" target="_blank">${item.station}</a>`;
+
+          const radioBox = item.station_url
+            ? `<a href="${item.station_url}" target="_blank" title="View on RadioBox">⌜</a>`
+            : 'n/a';
+
+          const twitterUsername = hasTwitter ? item.twitter.split("/").pop() : null;
+          const twitter = hasTwitter && twitterUsername
+            ? `<a href="https://twitter.com/intent/tweet?text=Thank%20you%20@${twitterUsername}%20for%20playing%20%23${encodeURIComponent(item.song.replace(/\s+/g, ''))}%20by%20Jung%20Kook." target="_blank">
+                 <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" class="icon" alt="Twitter" />
+               </a>`
+            : 'n/a';
+
+          const facebook = hasFacebook
+            ? `<a href="${item.facebook}" target="_blank">
+                 <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" class="icon" alt="Facebook" />
+               </a>`
+            : 'n/a';
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${item.song}</td>
+            <td>${stationCell}</td>
+            <td>${radioBox}</td>
+            <td>${twitter}</td>
+            <td>${facebook}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(err => {
+        console.error("Failed to load stations:", err);
+      });
+  </script>
+</body>
+</html>
