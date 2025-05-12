@@ -1,14 +1,6 @@
 services:
   - type: web
     name: jk-radio-api
-    runtime: python
-    buildCommand: |
-      apt-get update && apt-get install -y wget gnupg ca-certificates curl
-      pip install -r requirements.txt
-      python -m playwright install chromium --with-deps
-    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    env: docker
     plan: free
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.9
     autoDeploy: true
