@@ -1,13 +1,11 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
 from radio_scraper import scrape_stations
 
 app = FastAPI()
 
-# Allow frontend JS fetches
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,12 +14,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files (HTML, CSS, JS)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_index():
-    return FileResponse("static/index.html")
+async def root():
+    with open("static/index.html") as f:
+        return f.read()
 
 @app.get("/stations")
 async def get_stations():
