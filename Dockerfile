@@ -1,4 +1,4 @@
-FROM playwrightcommunity/playwright-python:latest
+FROM playwright/python:v1.43.1
 
 WORKDIR /app
 COPY . .
