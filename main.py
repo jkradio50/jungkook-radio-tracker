@@ -27,11 +27,13 @@ async def root():
 @app.get("/stations")
 async def get_stations():
     try:
-        return await scrape_stations()
+        # ⏱️ Wrap scraper with timeout
+        return await asyncio.wait_for(scrape_stations(), timeout=70)
+    except asyncio.TimeoutError:
+        return {"error": "Scraper timed out"}
     except Exception as e:
         return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8080)
-
