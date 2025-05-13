@@ -1,6 +1,6 @@
 FROM python:3.9-slim
 
-# Install dependencies
+# Install browser dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
@@ -26,16 +26,11 @@ RUN apt-get update && apt-get install -y \
     libxshmfence-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
-
-# Install Playwright browsers
 RUN playwright install chromium
 
-# Copy app
 COPY . .
 
-# Run app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000"]
