@@ -3,4 +3,3 @@ uvicorn
 aiofiles
 httpx
 playwright
-typing_extensions
