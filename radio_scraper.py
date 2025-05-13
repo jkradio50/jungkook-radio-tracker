@@ -5,9 +5,12 @@ async def scrape_stations():
     results = []
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(
+            headless=True,
+            args=["--no-sandbox", "--disable-dev-shm-usage"]
+        )
         page = await browser.new_page()
-        await page.goto(artist_url)
+        await page.goto(artist_url, timeout=60000, wait_until="domcontentloaded")
         await page.wait_for_timeout(3000)
 
         rows = await page.query_selector_all("tr.now_playing_tr")
