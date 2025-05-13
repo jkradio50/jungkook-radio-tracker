@@ -40,11 +40,23 @@
       width: 20px;
       height: 20px;
     }
+    #loading {
+      font-size: 1.2em;
+      margin-top: 20px;
+    }
+    #error {
+      color: red;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>🎻 Jung Kook Radio Tracker</h1>
-  <table>
+
+  <div id="loading">Loading stations...</div>
+  <div id="error"></div>
+
+  <table id="stations-table" style="display: none;">
     <thead>
       <tr>
         <th>🎵 Song</th>
@@ -60,50 +72,74 @@
   </table>
 
   <script>
-    fetch('http://127.0.0.1:8000/stations')
-      .then(res => res.json())
-      .then(data => {
-        const tbody = document.getElementById('stations-table-body');
-        tbody.innerHTML = '';
+    // Wake up backend immediately
+    fetch("/stations").catch(() => {});
 
-        data.forEach(item => {
-          const hasWebsite = item.website && item.website !== "n/a" && item.website !== "Not listed";
-          const hasTwitter = item.twitter && item.twitter !== "n/a" && !item.twitter.includes("onlineradiobox");
-          const hasFacebook = item.facebook && item.facebook !== "n/a" && item.facebook !== "Not listed";
+    async function fetchStationsWithRetry(retries = 3, delay = 4000) {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await fetch("/stations");
+          if (!res.ok) throw new Error("Bad response");
+          const data = await res.json();
+          if (Array.isArray(data)) return data;
+        } catch (err) {
+          console.warn(`Retry ${i + 1} failed`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+      throw new Error("Backend not available");
+    }
 
-          const stationLink = hasWebsite ? item.website : item.station_url;
-          const stationCell = `<a href="${stationLink}" target="_blank">${item.station}</a>`;
+    function renderTable(data) {
+      const tbody = document.getElementById('stations-table-body');
+      tbody.innerHTML = '';
 
-          const radioBox = item.station_url
-            ? `<a href="${item.station_url}" target="_blank" title="View on RadioBox">⌜</a>`
-            : 'n/a';
+      data.forEach(item => {
+        const hasWebsite = item.website && item.website !== "n/a" && item.website !== "Not listed";
+        const hasTwitter = item.twitter && item.twitter !== "n/a" && !item.twitter.includes("onlineradiobox");
+        const hasFacebook = item.facebook && item.facebook !== "n/a" && item.facebook !== "Not listed";
 
-          const twitterUsername = hasTwitter ? item.twitter.split("/").pop() : null;
-          const twitter = hasTwitter && twitterUsername
-            ? `<a href="https://twitter.com/intent/tweet?text=Thank%20you%20@${twitterUsername}%20for%20playing%20%23${encodeURIComponent(item.song.replace(/\s+/g, ''))}%20by%20Jung%20Kook." target="_blank">
-                 <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" class="icon" alt="Twitter" />
-               </a>`
-            : 'n/a';
+        const stationLink = hasWebsite ? item.website : item.station_url;
+        const stationCell = `<a href="${stationLink}" target="_blank">${item.station}</a>`;
 
-          const facebook = hasFacebook
-            ? `<a href="${item.facebook}" target="_blank">
-                 <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" class="icon" alt="Facebook" />
-               </a>`
-            : 'n/a';
+        const radioBox = item.station_url
+          ? `<a href="${item.station_url}" target="_blank" title="View on RadioBox">⌜</a>`
+          : 'n/a';
 
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${item.song}</td>
-            <td>${stationCell}</td>
-            <td>${radioBox}</td>
-            <td>${twitter}</td>
-            <td>${facebook}</td>
-          `;
-          tbody.appendChild(row);
-        });
-      })
+        const twitterUsername = hasTwitter ? item.twitter.split("/").pop() : null;
+        const twitter = hasTwitter && twitterUsername
+          ? `<a href="https://twitter.com/intent/tweet?text=Thank%20you%20@${twitterUsername}%20for%20playing%20%23${encodeURIComponent(item.song.replace(/\s+/g, ''))}%20by%20Jung%20Kook." target="_blank">
+               <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" class="icon" alt="Twitter" />
+             </a>`
+          : 'n/a';
+
+        const facebook = hasFacebook
+          ? `<a href="${item.facebook}" target="_blank">
+               <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" class="icon" alt="Facebook" />
+             </a>`
+          : 'n/a';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.song}</td>
+          <td>${stationCell}</td>
+          <td>${radioBox}</td>
+          <td>${twitter}</td>
+          <td>${facebook}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("stations-table").style.display = "table";
+    }
+
+    fetchStationsWithRetry()
+      .then(renderTable)
       .catch(err => {
         console.error("Failed to load stations:", err);
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("error").innerText = "Failed to load stations. Try refreshing in a few seconds.";
       });
   </script>
 </body>
