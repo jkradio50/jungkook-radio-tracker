@@ -14,10 +14,8 @@ async def scrape_stations():
             ]
         )
 
-        page = await browser.new_page()
-        await page.set_user_agent(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-        )
+        context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+        page = await context.new_page()
 
         try:
             await page.goto(artist_url, timeout=20000, wait_until="networkidle")
@@ -50,10 +48,8 @@ async def scrape_stations():
                 country, slug = radio_id.split(".", 1)
                 station_url = f"https://onlineradiobox.com/{country}/{slug}/?played=1&cs={radio_id}"
 
-                station_page = await browser.new_page()
-                await station_page.set_user_agent(
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-                )
+                station_context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+                station_page = await station_context.new_page()
 
                 try:
                     await station_page.goto(station_url, timeout=5000, wait_until="networkidle")
@@ -91,6 +87,7 @@ async def scrape_stations():
                     print(f"❌ Error loading station page: {e}")
                 finally:
                     await station_page.close()
+                    await station_context.close()
 
             except Exception as e:
                 print(f"❌ Error parsing row: {e}")
